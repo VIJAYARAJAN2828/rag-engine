@@ -23,7 +23,7 @@ from langchain_classic.chains import ConversationalRetrievalChain
 from langchain_classic.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 # ── App setup ──────────────────────────────────────────────────────────────────
 app = FastAPI(title="RAG App API", version="1.0.0")
@@ -45,7 +45,7 @@ os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # ── LLM & Embeddings ───────────────────────────────────────────────────────────
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 
 # ── In-memory session store ────────────────────────────────────────────────────
 # Each session has its own ChromaDB collection + conversation memory
