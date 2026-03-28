@@ -5,15 +5,14 @@ import RagTab from './components/RagTab';
 import ChatTab from './components/ChatTab';
 import './App.css';
 
-// Backend URL — set REACT_APP_API_URL in .env for production
 const API = process.env.REACT_APP_API_URL || '';
 
 export default function App() {
-  const [tab, setTab] = useState('rag');             // 'rag' | 'chat'
+  const [tab, setTab] = useState('rag');
   const [sessionId, setSessionId] = useState(null);
   const [sessionReady, setSessionReady] = useState(false);
-  console.log("hello this is the session id", sessionId);
-  // Create a session on first load
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   useEffect(() => {
     const initSession = async () => {
       try {
@@ -22,7 +21,6 @@ export default function App() {
         setSessionReady(true);
       } catch (err) {
         console.error('Failed to create session:', err);
-        // Fallback: generate client-side ID (chat still works)
         setSessionId(uuidv4());
         setSessionReady(true);
       }
@@ -30,19 +28,42 @@ export default function App() {
     initSession();
   }, []);
 
+  // Close sidebar when tab changes on mobile
+  const handleTabChange = (newTab) => {
+    setTab(newTab);
+    setSidebarOpen(false);
+  };
+
   return (
     <div className="app-shell">
+      {/* ── Mobile overlay ── */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* ── Mobile top bar ── */}
+      <div className="mobile-topbar">
+        <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <span /><span /><span />
+        </button>
+        <span className="mobile-logo">Vij<span className="logo-ai">AI</span></span>
+        <span className={`status-dot ${sessionReady ? 'online' : 'offline'}`} />
+      </div>
+
       {/* ── Sidebar ── */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        {/* Close button (mobile only) */}
+        <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>✕</button>
+
         <div className="logo">
           <span className="logo-icon">◈</span>
-          <span className="logo-text">VijAI<span className="logo-ai">AI</span></span>
+          <span className="logo-text">DocMind<span className="logo-ai">AI</span></span>
         </div>
 
         <nav className="nav">
           <button
             className={`nav-item ${tab === 'rag' ? 'active' : ''}`}
-            onClick={() => setTab('rag')}
+            onClick={() => handleTabChange('rag')}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -56,7 +77,7 @@ export default function App() {
 
           <button
             className={`nav-item ${tab === 'chat' ? 'active' : ''}`}
-            onClick={() => setTab('chat')}
+            onClick={() => handleTabChange('chat')}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -65,11 +86,10 @@ export default function App() {
           </button>
         </nav>
 
-        {/* Session badge */}
         <div className="session-badge">
           <span className={`status-dot ${sessionReady ? 'online' : 'offline'}`} />
           <span className="session-label">
-            {sessionReady ? `Session active` : 'Connecting…'}
+            {sessionReady ? 'Session active' : 'Connecting…'}
           </span>
         </div>
 

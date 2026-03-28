@@ -3,6 +3,69 @@
   display: flex;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+}
+
+/* ─── Mobile Top Bar (hidden on desktop) ────────────────────────────── */
+.mobile-topbar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+}
+.mobile-logo {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ─── Hamburger button ───────────────────────────────────────────────── */
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+/* ─── Sidebar overlay (mobile) ───────────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 149;
+}
+
+/* ─── Sidebar close button (mobile only) ────────────────────────────── */
+.sidebar-close {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
 }
 
 /* ─── Sidebar ───────────────────────────────────────────────────────── */
@@ -15,6 +78,9 @@
   flex-direction: column;
   padding: 24px 16px;
   gap: 8px;
+  position: relative;
+  z-index: 150;
+  transition: transform 0.25s ease;
 }
 
 .logo {
@@ -37,9 +103,7 @@
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
-.logo-ai {
-  color: var(--accent);
-}
+.logo-ai { color: var(--accent); }
 
 /* ─── Nav ────────────────────────────────────────────────────────────── */
 .nav {
@@ -48,7 +112,6 @@
   gap: 4px;
   flex: 1;
 }
-
 .nav-item {
   display: flex;
   align-items: center;
@@ -66,18 +129,13 @@
   text-align: left;
   width: 100%;
 }
-.nav-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
+.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
 .nav-item.active {
   background: var(--accent-glow);
   color: var(--accent);
   border: 1px solid rgba(79,142,247,0.25);
 }
-.nav-item svg {
-  flex-shrink: 0;
-}
+.nav-item svg { flex-shrink: 0; }
 
 /* ─── Session badge ──────────────────────────────────────────────────── */
 .session-badge {
@@ -97,7 +155,6 @@
 }
 .status-dot.online  { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
 .status-dot.offline { background: var(--text-muted); animation: pulse-dot 1.5s infinite; }
-
 .session-label {
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -108,15 +165,8 @@
 }
 
 /* ─── Sidebar footer ─────────────────────────────────────────────────── */
-.sidebar-footer {
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-}
-.tech-stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
+.sidebar-footer { border-top: 1px solid var(--border); padding-top: 16px; }
+.tech-stack { display: flex; flex-wrap: wrap; gap: 5px; }
 .tech-stack span {
   font-size: 0.65rem;
   font-family: var(--font-mono);
@@ -145,7 +195,6 @@
   gap: 16px;
   color: var(--text-secondary);
 }
-
 .spinner {
   width: 32px;
   height: 32px;
@@ -155,14 +204,31 @@
   animation: spin 0.8s linear infinite;
 }
 
-/* ─── Responsive ──────────────────────────────────────────────────────── */
-@media (max-width: 640px) {
+/* ─── Responsive — Mobile ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Show mobile top bar */
+  .mobile-topbar { display: flex; }
+  .sidebar-close { display: block; }
+
+  /* Show overlay when sidebar is open */
+  .sidebar-overlay { display: block; }
+
+  /* Push main content down for topbar */
+  .main-content { padding-top: 52px; }
+
+  /* Sidebar slides in from left */
   .sidebar {
-    width: 64px;
-    padding: 16px 8px;
+    position: fixed;
+    top: 0; left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+    padding-top: 48px;
   }
-  .logo-text, .nav-item span, .session-label, .tech-stack, .sidebar-footer { display: none; }
-  .logo { justify-content: center; padding-left: 0; padding-right: 0; }
-  .nav-item { justify-content: center; padding: 12px; }
-  .session-badge { justify-content: center; padding: 8px; }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Hide desktop logo inside sidebar on mobile (shown in topbar instead) */
+  .sidebar .logo { display: none; }
 }
