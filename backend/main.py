@@ -48,7 +48,9 @@ def get_embeddings():
     global _embeddings
     if _embeddings is None:
         _embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004"
+            model="models/text-embedding-004",
+            google_api_key=GOOGLE_API_KEY,
+            api_version="v1"
         )
     return _embeddings
 
