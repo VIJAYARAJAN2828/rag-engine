@@ -13,11 +13,9 @@ from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, Te
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import FakeEmbeddings
-from langchain_classic.chains import ConversationalRetrievalChain
-from langchain_classic.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
 
-
+# ── App setup ──────────────────────────────────────────────────────────────────
 app = FastAPI(title="RAG App API", version="1.0.0")
 
 app.add_middleware(
@@ -28,26 +26,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Google API Key
+# ── Google API Key ─────────────────────────────────────────────────────────────
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
-# LLM
+# ── LLM ───────────────────────────────────────────────────────────────────────
 llm = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
     temperature=0,
-    client_options={"api_endpoint": "generativelanguage.googleapis.com"},
-    transport="rest"
+    google_api_key=GOOGLE_API_KEY,
 )
 
-
+# ── Embeddings (no API key needed) ─────────────────────────────────────────────
 embeddings = FakeEmbeddings(size=1536)
 
-# In-memory session store
+# ── In-memory session store ────────────────────────────────────────────────────
 sessions: dict = {}
 chat_memories: dict = {}
 
-# Pydantic models
+# ── Pydantic models ────────────────────────────────────────────────────────────
 class AskRequest(BaseModel):
     session_id: str
     question: str
@@ -59,7 +56,7 @@ class ChatRequest(BaseModel):
 class SessionRequest(BaseModel):
     session_id: Optional[str] = None
 
-# Helpers
+# ── Helpers ────────────────────────────────────────────────────────────────────
 def load_document(file_path: str, filename: str):
     ext = Path(filename).suffix.lower()
     if ext == ".pdf":
@@ -72,23 +69,7 @@ def load_document(file_path: str, filename: str):
         raise ValueError(f"Unsupported file type: {ext}")
     return loader.load()
 
-def build_rag_chain(vectorstore):
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
-    memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        return_messages=True,
-        output_key="answer"
-    )
-    chain = ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=retriever,
-        memory=memory,
-        return_source_documents=True,
-        verbose=False,
-    )
-    return chain
-
-# Routes
+# ── Routes ─────────────────────────────────────────────────────────────────────
 @app.get("/")
 def root():
     return {"status": "RAG API is running 🚀"}
@@ -96,7 +77,7 @@ def root():
 @app.post("/session/create")
 def create_session():
     session_id = str(uuid.uuid4())
-    sessions[session_id] = {"vectorstore": None, "chain": None, "docs_info": []}
+    sessions[session_id] = {"vectorstore": None, "docs_info": []}
     chat_memories[session_id] = []
     return {"session_id": session_id}
 
@@ -134,9 +115,7 @@ async def upload_document(session_id: str, file: UploadFile = File(...)):
             existing_vs.add_documents(chunks)
             vectorstore = existing_vs
 
-        chain = build_rag_chain(vectorstore)
         sessions[session_id]["vectorstore"] = vectorstore
-        sessions[session_id]["chain"] = chain
         sessions[session_id]["docs_info"].append({
             "filename": file.filename,
             "chunks": len(chunks),
@@ -155,20 +134,43 @@ async def upload_document(session_id: str, file: UploadFile = File(...)):
 def ask_document(req: AskRequest):
     if req.session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found.")
+
     session = sessions[req.session_id]
-    if session["chain"] is None:
+    if session["vectorstore"] is None:
         raise HTTPException(status_code=400, detail="No documents uploaded yet.")
+
     try:
-        result = session["chain"].invoke({"question": req.question})
-        answer = result.get("answer", "")
+        # Retrieve relevant chunks
+        retriever = session["vectorstore"].as_retriever(search_kwargs={"k": 5})
+        docs = retriever.invoke(req.question)
+
+        # Build context from chunks
+        context = "\n\n".join([doc.page_content for doc in docs])
+
+        # Send directly to Gemini
+        prompt = f"""Answer the question based only on the context below.
+If the answer is not in the context, say "I couldn't find that in the document."
+
+Context:
+{context}
+
+Question: {req.question}
+
+Answer:"""
+
+        response = llm.invoke(prompt)
+
+        # Build sources
         sources = []
-        for doc in result.get("source_documents", []):
+        for doc in docs[:3]:
             sources.append({
                 "snippet": doc.page_content[:300],
                 "source": doc.metadata.get("source", "uploaded document"),
                 "page": doc.metadata.get("page", "N/A"),
             })
-        return {"answer": answer, "sources": sources[:3]}
+
+        return {"answer": response.content, "sources": sources}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
@@ -176,6 +178,7 @@ def ask_document(req: AskRequest):
 def general_chat(req: ChatRequest):
     if req.session_id not in chat_memories:
         chat_memories[req.session_id] = []
+
     history = chat_memories[req.session_id]
     messages = []
     for entry in history[-10:]:
@@ -184,6 +187,7 @@ def general_chat(req: ChatRequest):
         else:
             messages.append(AIMessage(content=entry["content"]))
     messages.append(HumanMessage(content=req.message))
+
     try:
         response = llm.invoke(messages)
         answer = response.content
