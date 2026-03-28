@@ -36,7 +36,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="logo">
           <span className="logo-icon">◈</span>
-          <span className="logo-text">DocMind<span className="logo-ai">AI</span></span>
+          <span className="logo-text">VijAI<span className="logo-ai">AI</span></span>
         </div>
 
         <nav className="nav">
