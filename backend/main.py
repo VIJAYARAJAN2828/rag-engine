@@ -33,7 +33,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # LLM
-llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
 
 
 embeddings = FakeEmbeddings(size=1536)
