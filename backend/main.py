@@ -1,8 +1,3 @@
-"""
-RAG Application Backend - FastAPI + LangChain + ChromaDB + Google Gemini
-Uses ChromaDB default embeddings (no external embedding API needed)
-"""
-
 import os
 import uuid
 import tempfile
@@ -22,7 +17,7 @@ from langchain_classic.chains import ConversationalRetrievalChain
 from langchain_classic.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
 
-# App setup
+
 app = FastAPI(title="RAG App API", version="1.0.0")
 
 app.add_middleware(
@@ -40,8 +35,7 @@ os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 # LLM
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
-# Use FakeEmbeddings as fallback - works without any API key
-# This still enables semantic search via ChromaDB's internal mechanisms
+
 embeddings = FakeEmbeddings(size=1536)
 
 # In-memory session store
