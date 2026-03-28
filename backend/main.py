@@ -42,7 +42,11 @@ os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
 # ── LLM & Embeddings ───────────────────────────────────────────────────────────
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
-embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/text-embedding-004",
+    client_options={"api_endpoint": "generativelanguage.googleapis.com"},
+    transport="rest"
+)
 
 # ── In-memory session store ────────────────────────────────────────────────────
 # Each session has its own ChromaDB collection + conversation memory
