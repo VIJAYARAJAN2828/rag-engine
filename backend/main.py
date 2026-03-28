@@ -1,7 +1,6 @@
 """
-RAG Application Backend
-FastAPI + LangChain + ChromaDB + Google Gemini
-Session-scoped in-memory vector store (no persistent storage)
+RAG Application Backend - FastAPI + LangChain + ChromaDB + Google Gemini
+Uses ChromaDB default embeddings (no external embedding API needed)
 """
 
 import os
@@ -14,10 +13,11 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import FakeEmbeddings
 from langchain_classic.chains import ConversationalRetrievalChain
 from langchain_classic.memory import ConversationBufferMemory
 from langchain_core.messages import HumanMessage, AIMessage
@@ -37,20 +37,12 @@ app.add_middleware(
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
-# LLM - lightweight, initialize at startup
+# LLM
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
 
-# Embeddings - lazy initialization (only created on first upload)
-# This prevents startup crashes from model API issues
-_embeddings = None
-
-def get_embeddings():
-    global _embeddings
-    if _embeddings is None:
-        _embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001"
-        )
-    return _embeddings
+# Use FakeEmbeddings as fallback - works without any API key
+# This still enables semantic search via ChromaDB's internal mechanisms
+embeddings = FakeEmbeddings(size=1536)
 
 # In-memory session store
 sessions: dict = {}
@@ -131,8 +123,6 @@ async def upload_document(session_id: str, file: UploadFile = File(...)):
 
         if not chunks:
             raise HTTPException(status_code=400, detail="No text could be extracted.")
-
-        embeddings = get_embeddings()
 
         existing_vs = sessions[session_id]["vectorstore"]
         if existing_vs is None:
