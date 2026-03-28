@@ -1,0 +1,12 @@
+# render.yaml — deploy backend as a Web Service on Render free tier
+services:
+  - type: web
+    name: docmind-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GOOGLE_API_KEY
+        value: AIzaSyBCVrmKCf2tTe6cs9UaYxFzbZbjTQCs3xI
+      - key: PYTHON_VERSION
+        value: 3.11.0
