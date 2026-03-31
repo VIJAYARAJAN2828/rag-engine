@@ -15,7 +15,7 @@ from openinference.instrumentation.langchain import LangChainInstrumentor
 tracer_provider = register(
     space_id=os.getenv("ARIZE_SPACE_ID"),
     api_key=os.getenv("ARIZE_API_KEY"),
-    model_id="rag-engine",
+    project_name="rag-engine",    # ← use this instead
 )
 LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
 # ──────────────────────────────────────────────────────────────────────────────
