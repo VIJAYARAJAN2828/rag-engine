@@ -25,3 +25,8 @@ google-generativeai==0.8.3
  
 # Utilities
 python-dotenv==1.0.1
+
+arize-otel
+openinference-instrumentation-langchain
+opentelemetry-sdk
+opentelemetry-exporter-otlp

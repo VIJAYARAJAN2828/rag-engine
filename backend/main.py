@@ -8,6 +8,18 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+# ── Arize AX Observability ─────────────────────────────────────────────────────
+from arize.otel import register
+from openinference.instrumentation.langchain import LangChainInstrumentor
+
+tracer_provider = register(
+    space_id=os.getenv("ARIZE_SPACE_ID"),
+    api_key=os.getenv("ARIZE_API_KEY"),
+    model_id="rag-engine",
+)
+LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+# ──────────────────────────────────────────────────────────────────────────────
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
